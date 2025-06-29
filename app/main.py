@@ -33,4 +33,5 @@ async def generate(payload: schemas.GenerateRequest):
     
 @app.get("/status", dependencies=[Depends(require_api_key)])
 async def status():
-    return {"model": model_manager.manager.model_name or "None"}
+    str_status = model_manager.manager.get_status()
+    return JSONResponse(content={"status": str_status})
