@@ -36,7 +36,12 @@ class ModelManager:
         else:
             print(f"O modelo {model_name} já está carregado.")
 
-    def generate(self, prompt:str, max_tokens:int = 300, temperature:float = 1.0, top_p:float = 1.0) -> str:        
+
+    def generate(self, model_name:str, hf_token: str, prompt:str, max_tokens:int = 300, temperature:float = 1.0, top_p:float = 1.0) -> str:
+        
+        if self.model_name != model_name:
+            self.load_model(model_name, hf_token, device=DEVICE)
+        
         if self.model is None or self.tokenizer is None:
             raise HTTPException(status_code=400, detail="Nenhum modelo carregado.")
 
@@ -58,10 +63,12 @@ class ModelManager:
     def unload_model(self):
         self.model = None
         self.tokenizer = None
+        old_model = self.model_name if self.model_name else False
         self.model_name = None
 
         gc.collect()
         torch.cuda.empty_cache()
+        return f"Modelo {old_model} descarregado com sucesso." if old_model else "Nenhum modelo carregado para descarregar."
 
 manager = ModelManager()
         

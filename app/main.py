@@ -26,7 +26,7 @@ async def load_model(payload: schemas.LoadModelRequest) -> JSONResponse:
 @app.post("/generate", dependencies=[Depends(require_api_key)])
 async def generate(payload: schemas.GenerateRequest)-> JSONResponse:
     try:
-        result = model_manager.manager.generate(payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
+        result = model_manager.manager.generate(payload.model_name, payload.hf_token,payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
         return {"result": result}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -35,3 +35,11 @@ async def generate(payload: schemas.GenerateRequest)-> JSONResponse:
 async def status()-> JSONResponse:
     str_status = model_manager.manager.get_status()
     return JSONResponse(content={"status": str_status})
+
+@app.post("/unload_model", dependencies=[Depends(require_api_key)])
+async def unload_model() -> JSONResponse:
+    try:
+        str_unload = model_manager.manager.unload_model()
+        return JSONResponse(content={"message":str_unload})
+    except Exception as e:
+        raise HTTPException(status_code=500, content={"error": str(e)})
