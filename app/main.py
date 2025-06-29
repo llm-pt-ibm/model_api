@@ -7,18 +7,18 @@ app = FastAPI()
 async def require_api_key(request: Request):
     user = await auth.verify_apikey(request)
     if not user:
-        raise HTTPException(status_code=401, detail="API key inválida.")
+        raise HTTPException(status_code=401, detail="API key invalida.")
     return user
 
 @app.post("/generate_apikey")
-async def generate_apikey(payload: schemas.LDAPUsernameRequest):
+async def generate_apikey(payload: schemas.LDAPUserRequest):
     key = auth.generate_apikey(payload.username)
     return JSONResponse(content={"api_key": key})
 
 @app.post("/load_model", dependencies=[Depends(require_api_key)])
 async def load_model(payload: schemas.LoadModelRequest):
     try:
-        model_manager.load_model(payload.model_name, payload.model_path, payload.device)
+        model_manager.manager.load_model(payload.model_name, payload.hf_token, payload.device)
         return JSONResponse(content={"message": f"Modelo {payload.model_name} carregado com sucesso."})
     except Exception as e:
         raise HTTPException(status_code=500, content={"error": str(e)})
