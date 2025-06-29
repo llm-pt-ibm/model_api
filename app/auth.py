@@ -14,18 +14,18 @@ def load_apikeys():
             detail=f"Arquivo de API keys não encontrado: {APIKEY_STORE_FILE}"
         )
     
-def save_apikeys(keys):
+def save_apikeys(keys: dict):
     with open(APIKEY_STORE_FILE, "w") as f:
         json.dump(keys, f, indent=4)
 
-def generate_apikey(user:str):
+def generate_apikey(user:str) -> str:
     key = secrets.token_hex(32)
     keys = load_apikeys()
     keys[user] = key
     save_apikeys(keys)
     return key
 
-async def verify_apikey(request: Request):
+async def verify_apikey(request: Request) -> bool:
     apikey = request.headers.get("x-API-Key")
     if not apikey:
         raise HTTPException(
