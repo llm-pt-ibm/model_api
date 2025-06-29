@@ -18,7 +18,7 @@ def save_apikeys(keys):
     with open(APIKEY_STORE_FILE, "w") as f:
         json.dump(keys, f, indent=4)
 
-def generate_apikey(user):
+def generate_apikey(user:str):
     key = secrets.token_hex(32)
     keys = load_apikeys()
     keys[user] = key
@@ -34,7 +34,8 @@ async def verify_apikey(request: Request):
         )
     try:
         keys = load_apikeys()
-        return keys.get(apikey)
+        if apikey in keys.values():
+            return True
     
     except json.JSONDecodeError:
         raise HTTPException(
