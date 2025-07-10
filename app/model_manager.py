@@ -1,4 +1,5 @@
 import torch 
+import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from fastapi import HTTPException
 import gc
@@ -36,8 +37,8 @@ class ModelManager:
         else:
             print(f"O modelo {model_name} já está carregado.")
 
-    def generate(self, model_name:str, hf_token: str, prompt:str, max_tokens:int = 300, temperature:float = 1.0, top_p:float = 1.0) -> str:
-        
+    def generate(self, model_name: str, hf_token: str, prompt: str, max_tokens: int = 300, temperature: float = 1.0, top_p: float = 1.0) -> dict:
+
         if self.model_name != model_name:
             self.load_model(model_name, hf_token, device=DEVICE)
 
@@ -45,12 +46,29 @@ class ModelManager:
             raise HTTPException(status_code=400, detail="Nenhum modelo carregado.")
 
         try:
+            print('a1')
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-            with torch.no_grad(): 
-                outputs = self.model.generate(**inputs, max_new_tokens=max_tokens,temperature=temperature, top_p=top_p, eos_token_id=self.tokenizer.eos_token_id)
-            return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            prompt_len = inputs["input_ids"].shape[-1]
+
+            print('a2')
+            with torch.no_grad():
+                gen_out = self.model.generate(**inputs,max_new_tokens=max_tokens,temperature=temperature,top_p=top_p,eos_token_id=self.tokenizer.eos_token_id,return_dict_in_generate=True,output_scores=True,pad_token_id=self.tokenizer.eos_token_id)
+
+            full_text = self.tokenizer.decode(
+                gen_out.sequences[0], skip_special_tokens=True
+            )
+
+            gen_token_ids = gen_out.sequences[0][prompt_len:]
+
+            log_probs = []
+            for step_scores, tok_id in zip(gen_out.scores, gen_token_ids):
+                lp = F.log_softmax(step_scores, dim=-1)[0, tok_id].item()
+                log_probs.append(lp)
+
+            return {"text": full_text, "log_probs": log_probs}
+
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erro ao gerar texto: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Erro ao gerar texto: {e}")
     
     def get_status(self) -> str:        
         if self.model is None:
@@ -69,5 +87,3 @@ class ModelManager:
         return f"Modelo {old_model} descarregado com sucesso." if old_model else "Nenhum modelo carregado para descarregar."
 
 manager = ModelManager()
-        
-
