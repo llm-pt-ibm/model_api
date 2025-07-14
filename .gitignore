@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 *.json
+app/apikey_store.json
 MANIFEST
 
 # PyInstaller
