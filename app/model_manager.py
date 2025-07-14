@@ -37,7 +37,7 @@ class ModelManager:
         else:
             print(f"O modelo {model_name} já está carregado.")
 
-    def generate(self, model_name: str, hf_token: str, prompt: str, max_tokens: int = 300, temperature: float = 1.0, top_p: float = 1.0) -> dict:
+    def generate(self, model_name: str, hf_token: str, prompt: str, max_tokens: int = 10000, temperature: float = 1.0, top_p: float = 1.0) -> dict:
 
         if self.model_name != model_name:
             self.load_model(model_name, hf_token, device=DEVICE)
@@ -46,11 +46,9 @@ class ModelManager:
             raise HTTPException(status_code=400, detail="Nenhum modelo carregado.")
 
         try:
-            print('a1')
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
             prompt_len = inputs["input_ids"].shape[-1]
 
-            print('a2')
             with torch.no_grad():
                 gen_out = self.model.generate(**inputs,max_new_tokens=max_tokens,temperature=temperature,top_p=top_p,eos_token_id=self.tokenizer.eos_token_id,return_dict_in_generate=True,output_scores=True,pad_token_id=self.tokenizer.eos_token_id)
 
