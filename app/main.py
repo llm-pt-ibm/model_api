@@ -1,18 +1,24 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from app import schemas, model_manager, auth
+from app.logger import setup_logger
+
+logger = setup_logger("API")
 
 app = FastAPI()
 
 async def require_api_key(request: Request) -> schemas.LDAPUserRequest:
     user = await auth.verify_apikey(request)
     if not user:
+        logger.warning("API key inválida ou não fornecida.")
         raise HTTPException(status_code=401, detail="API key invalida.")
+    logger.info(f"API key verificada para o usuário: {user.username}.")
     return user
 
 @app.post("/generate_apikey")
 async def generate_apikey(payload: schemas.LDAPUserRequest) -> JSONResponse:
     key = auth.generate_apikey(payload.username)
+    logger.info(f"API key gerada para o usuário {payload.username}.")
     return JSONResponse(status_code=200, content={"api_key": key})
 
 @app.post("/load_model", dependencies=[Depends(require_api_key)])
@@ -21,6 +27,7 @@ async def load_model(payload: schemas.LoadModelRequest) -> JSONResponse:
         model_manager.manager.load_model(payload.model_name, payload.hf_token, payload.device)
         return JSONResponse(content={"message": f"Modelo {payload.model_name} carregado com sucesso."})
     except Exception as e:
+        logger.error(f"Erro ao carregar o modelo: {payload.model_name}. Erro: {str(e)}")
         raise HTTPException(status_code=500, content={"error": str(e)})
     
 @app.post("/generate", dependencies=[Depends(require_api_key)])
@@ -29,11 +36,13 @@ async def generate(payload: schemas.GenerateRequest)-> JSONResponse:
         result = model_manager.manager.generate(payload.model_name, payload.hf_token,payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
         return {"result": result}
     except Exception as e:
+        logger.error(f"Erro ao gerar texto: {str(e)} - Payload: {payload}", exc_info=True)
         return JSONResponse(status_code=500, content={"error": str(e)})
     
 @app.get("/status", dependencies=[Depends(require_api_key)])
 async def status()-> JSONResponse:
     str_status = model_manager.manager.get_status()
+    logger.info(f"Status do modelo: {str_status}")
     return JSONResponse(content={"status": str_status})
 
 @app.post("/unload_model", dependencies=[Depends(require_api_key)])
