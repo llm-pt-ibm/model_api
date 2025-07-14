@@ -35,7 +35,8 @@ async def verify_apikey(request: Request) -> bool:
     try:
         keys = load_apikeys()
         if apikey in keys.values():
-            return True
+            key = next(k for k, v in keys.items() if v == apikey)
+            return key
     
     except json.JSONDecodeError:
         raise HTTPException(

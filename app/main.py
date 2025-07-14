@@ -12,7 +12,7 @@ async def require_api_key(request: Request) -> schemas.LDAPUserRequest:
     if not user:
         logger.warning("API key inválida ou não fornecida.")
         raise HTTPException(status_code=401, detail="API key invalida.")
-    logger.info(f"API key verificada para o usuário: {user.username}.")
+    logger.info(f"API key verificada para o usuário: {user}.")
     return user
 
 @app.post("/generate_apikey")
