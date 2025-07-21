@@ -33,7 +33,7 @@ async def load_model(payload: schemas.LoadModelRequest) -> JSONResponse:
 @app.post("/generate", dependencies=[Depends(require_api_key)])
 async def generate(payload: schemas.GenerateRequest)-> JSONResponse:
     try:
-        result = model_manager.manager.generate(payload.model_name, payload.hf_token,payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
+        result = model_manager.manager.generate(payload, payload.model_name, payload.hf_token,payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
         return {"result": result}
     except Exception as e:
         logger.error(f"Erro ao gerar texto: {str(e)} - Payload: {payload}", exc_info=True)
