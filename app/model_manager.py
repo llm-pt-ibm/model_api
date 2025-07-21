@@ -18,7 +18,9 @@ class ModelManager:
     def load_model(self, model_name: str, hf_token:str = None, device: str = DEVICE):
         if self.model_name != None and self.model_name != model_name:
             self.logger.info(f"Descarregando modelo {self.model_name} antes de carregar {model_name}.")
-        self.unload_model()        
+            
+        self.unload_model()       
+
         print(f"Carregando modelo {model_name} no dispositivo {device}...")
 
         if self.model_name != model_name:
@@ -40,8 +42,10 @@ class ModelManager:
             self.logger.info(f"O modelo {model_name} já está carregado.")
 
 
-    def generate(self, model_name: str, hf_token: str, prompt: str, max_tokens: int = 10000, temperature: float = 1.0, top_p: float = 1.0) -> dict:
-
+    def generate(self, payload, model_name: str, hf_token: str, prompt: str, max_tokens: int = 500, temperature: float = 1.0, top_p: float = 1.0) -> dict:
+        self.logger.info(payload)
+        
+        max_tokens = 1000
         if self.model_name != model_name:
             self.load_model(model_name, hf_token, device=DEVICE)
         
@@ -56,7 +60,7 @@ class ModelManager:
             prompt_len = inputs["input_ids"].shape[-1]
 
             with torch.no_grad():
-                gen_out = self.model.generate(**inputs,max_new_tokens=max_tokens,temperature=temperature,top_p=top_p,eos_token_id=self.tokenizer.eos_token_id,return_dict_in_generate=True,output_scores=True,pad_token_id=self.tokenizer.eos_token_id)
+                gen_out = self.model.generate(**inputs,max_new_tokens=max_tokens,temperature=temperature,top_p=top_p,eos_token_id=self.tokenizer.eos_token_id,return_dict_in_generate=True,output_scores=True,pad_token_id=self.tokenizer.eos_token_id)           
 
             full_text = self.tokenizer.decode(
                 gen_out.sequences[0], skip_special_tokens=True
