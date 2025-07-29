@@ -1,3 +1,4 @@
+import time 
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from app import schemas, model_manager, auth
@@ -31,13 +32,27 @@ async def load_model(payload: schemas.LoadModelRequest) -> JSONResponse:
         raise HTTPException(status_code=500, content={"error": str(e)})
     
 @app.post("/generate", dependencies=[Depends(require_api_key)])
-async def generate(payload: schemas.GenerateRequest)-> JSONResponse:
+async def generate(payload: schemas.GenerateRequest) -> JSONResponse:
+    start_time = time.time()
     try:
-        result = model_manager.manager.generate(payload, payload.model_name, payload.hf_token,payload.prompt, payload.max_tokens, payload.temperature, payload.top_p)
-        return {"result": result}
+        completions_data = model_manager.manager.generate(payload)
+
+        request_time = time.time() - start_time
+        response_content = {
+            "success": True,
+            "request_time": request_time,
+            "completions": completions_data
+        }
+        return JSONResponse(status_code=200, content=response_content)
+
     except Exception as e:
-        logger.error(f"Erro ao gerar texto: {str(e)} - Payload: {payload}", exc_info=True)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error(f"Erro ao gerar texto: {str(e)} - Payload: {payload.dict()}", exc_info=True)
+
+        error_response = {
+            "success": False,
+            "error": str(e)
+        }
+        return JSONResponse(status_code=500, content=error_response)
     
 @app.get("/status", dependencies=[Depends(require_api_key)])
 async def status()-> JSONResponse:

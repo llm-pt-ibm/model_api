@@ -1,14 +1,18 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
+
+class GenerationParameters(BaseModel):
+    temperature: float = Field(1.0, description="The sampling temperature for generation.", ge=0)
+    max_new_tokens: int = Field(300, description="The maximum number of new tokens to generate.", gt=0)
+    top_p: float = Field(1.0, description="The cumulative probability for nucleus sampling.", ge=0, le=1)
+    num_return_sequences: int = Field(1, description="The number of completions to generate.", ge=1)
+    stop_sequences: List[str] = Field([], description="A list of strings to stop generation at.")
 
 class GenerateRequest(BaseModel):
     model_name: str = Field(..., description="The name of the model to use for generation.")
     prompt: str = Field(..., description="The input text to generate a response for.")
-    max_tokens: Optional[int] = Field(300, description="The maximum length of the generated response.")
-    temperature: Optional[float] = Field(1.0, description="The sampling temperature for generation.")
-    top_p: Optional[float] = Field(1.0, description="The cumulative probability for nucleus sampling.")
-    hf_token: Optional[str] = Field(None, description="The Hugging Face tokenizer to use, if applicable.")
-
+    hf_token: Optional[str] = Field(None, description="The Hugging Face token, if required by the model.")
+    parameters: GenerationParameters = Field(..., description="The parameters for text generation.")
 
 class LoadModelRequest(BaseModel):
     model_name: str = Field(..., description="The name of the model to load.")
