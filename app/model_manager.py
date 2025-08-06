@@ -113,10 +113,11 @@ class ModelManager:
     def get_status(self) -> str:
         if not self.model:
             return "Nenhum modelo carregado."
-        return f"Modelo carregado: {self.model_name}"
+        return is_model_on_gpu(self.model.hf_device_map, self.model_name)
 
     def unload_model(self):
         if not self.model:
+            self.logger.info("Nenhum modelo carregado para descarregar.")
             return "Nenhum modelo carregado para descarregar."
         
         old_model = self.model_name
@@ -125,9 +126,9 @@ class ModelManager:
         self.model = None
         self.tokenizer = None
         self.model_name = None
-
         gc.collect()
         torch.cuda.empty_cache()
+        self.logger.info(f"Modelo {old_model} descarregado com sucesso.")
         return f"Modelo {old_model} descarregado com sucesso."
 
 manager = ModelManager()

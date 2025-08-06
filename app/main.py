@@ -29,7 +29,12 @@ async def load_model(payload: schemas.LoadModelRequest) -> JSONResponse:
         return JSONResponse(content={"message": f"Modelo {payload.model_name} carregado com sucesso."})
     except Exception as e:
         logger.error(f"Erro ao carregar o modelo: {payload.model_name}. Erro: {str(e)}")
-        raise HTTPException(status_code=500, content={"error": str(e)})
+        
+        error_response = {
+            "success": False,
+            "error": str(e)
+        }
+        return JSONResponse(status_code=500, content=error_response)
     
 @app.post("/generate", dependencies=[Depends(require_api_key)])
 async def generate(payload: schemas.GenerateRequest) -> JSONResponse:
@@ -64,6 +69,10 @@ async def status()-> JSONResponse:
 async def unload_model() -> JSONResponse:
     try:
         str_unload = model_manager.manager.unload_model()
-        return JSONResponse(content={"message":str_unload})
+        return JSONResponse(content={"message": str_unload})
     except Exception as e:
-        raise HTTPException(status_code=500, content={"error": str(e)})
+        error_response = {
+            "success": False,
+            "error": str(e)
+        }
+        return JSONResponse(status_code=500, content=error_response)
